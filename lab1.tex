@@ -1,0 +1,507 @@
+\documentclass[10pt, preprint]{aastex}
+
+\usepackage{natbib}
+\bibliographystyle{apj}
+
+%this is all needed to use the lstlisting package with colours
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[compatibility=false]{caption}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+%this is where the colour formatting for lstlisting, if you don't want colour it isn't necessary
+
+\usepackage{minted}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{amsmath}
+\usepackage[toc,page]{appendix}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=blue,
+    citecolor=blue,
+}
+\usepackage{booktabs}
+\renewcommand{\arraystretch}{1}
+\let\tablenum\relax
+\usepackage{siunitx}
+
+\title{Lab Report One: Basic Photon Statistics}
+
+\author{
+Jinhao Zhang \\
+Group Partners: Mike Gu, Epsilon Mao \\
+Email: jinny.zhang@mail.utoronto.ca \\
+Utorid: zha12748 \\
+Lab Group: D \\
+}
+\date{\centering \today}
+
+\begin{document}
+
+
+\begin{abstract}
+In this lab, we analyzed the noise of the instrument and performance of a Charge-Coupled Device (CCD) sensor through various experiments. We explored key concepts such as read noise, dark current, and photon statistics by measuring photon count rates under different conditions. The dark current was determined to be $0.200 \pm 0.001$ e$^-$/sec/pixel, and the read noise was found to be approximately 0.64 ADU. Using a linear least-squares fit, we determined the gain of the CCD to be $16.67 \pm 0.5$ e$^-$/ADU. These results are consistent with theoretical expectations for CCD sensors and are essential for accurate astronomical measurements. The data follows the Poisson distribution for low photon count rates, transitioning to a Gaussian distribution at higher count rates as predicted by the Central Limit Theorem.
+\end{abstract}
+
+\maketitle
+
+
+\section{Introduction}
+Detectors have long been used in astronomical observations in the form of Charge-Coupled Devices (CCDs) and Complementary Metal-Oxide-Semiconductor (CMOS) sensors. The photoelectric effect in these devices turns the incoming photons into electronic signals, allowing astronomers to measure the intensity of light from distant objects. However, the performance of these detectors is limited by noise sources, including photon noise, dark current, and read noise, all of which must be accounted for to ensure accurate measurements. In this lab, we investigate the properties of CCD sensors by measuring photon count rates, finding out the system noise, examining the dark current within the detector, and explore how well our measurements follow statistical models like the Poisson and Gaussian distributions.
+
+One of the primary objectives of this experiment is to compare the observed photon count rates with the expected Poisson distribution. The Poisson distribution describes the distribution of discrete events occurring within a fixed interval (lecture 2). Poisson distributions are discrete and asymmetric when the mean of the data is small, but as the mean increases, the distribution begins to resemble Gaussian distributions. The Gaussian (or normal) distribution, by contrast, is continuous and symmetric, and this occurrence is explained by the Central Limit Theorem, which states that the sum of a large number of independent random variables tends toward a normal distribution (lecture 2).
+
+CCD sensors also experience read noise, which is introduced during the process of measuring and digitizing the charge collected in each pixel. This noise, along with other sources such as photon noise and dark current, contributes to the overall uncertainty in the measurements and must be carefully considered in any analysis of the sensor's performance. In this experiment, both light and dark images are captured and the resulting data is transferred for further analysis. A Python script will be used to calculate the camera's gain and noise properties. By applying least-squares fitting to the relationship between the mean and variance of the data (see section 3), we will quantify the read noise of the sensor and assess its impact on the accuracy of the measurements.
+
+Additionally, we explore the dark current, which is the build-up of charge within the detector due to thermal excitation. Dark current introduces additional charge into the measurement, leading to systematic errors that must be corrected. To mitigate this, detectors are often cooled to reduce thermal noise. This lab examines the relationship between exposure time and dark current, and uses the least-squares fitting method to find the relationship between exposure time and the dark current.
+
+This lab report begins with analysis on datasets to see the correlation between Poisson distribution and Gaussian distribution. We will then have an overview of the experimental setup of the photon counting process. Afterwards, we will model the Poisson distribution by adjusting the sensor settings. Then, we will explore the methods used to measure read noise and analyze the dark current. Finally, we will present the results of our analysis and discuss the implications of these findings for astronomical observations.
+
+
+\section{Data and Observation}
+\label{sec:data}
+
+\subsection{CCD Data Collection}
+
+We completed the experimentation of the lab using a Greyscale CCD with the following specifications:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcr}
+\hline
+Setting & Value\\\hline
+Pixel Count & 1288 x 964\\
+Gain Range & 0-24dB\\
+Digitization & 12 bits (8 bits used) \\
+\end{tabular}
+\caption{\label{table:CCDSettings}CCD Settings}
+\end{table}
+
+We fist opened FlyCap2 and connected our CCD to the software. Then, we made sure all the auto adjusts in the camera control window were off. We would point the CCD at a bright target so that the camera shows a bright image. After, we select the  for the histogram and adjusted the "Shutter" to see the maximum data value returned by the CCD. We would repeat the process pointing at two other bright objects to see if the maximum data value changes. 
+
+
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcr}
+\hline
+CCD Maximum Value & 255 ADU\\\hline
+\end{tabular}
+\caption{\label{table:CCDMax}Max Value of CCD}
+\end{table}
+
+Now we move on to Section 4.2.2 of the Lab manual. We placed the lens cap onto the CCD and changed the frame rate to 1fps. Below is our FlyCap camera control settings:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcr}
+\hline
+Setting & Value\\\hline
+Brightness & 1.367 percent \\
+Exposure & -4.000 EV\\
+Sharpness & 1524 \\
+Gamma & 1.000\\
+Gain & 0.086dB\\
+Frame Rate & 1.000 fps \\
+\end{tabular}
+\caption{\label{table:CCDSettings4.2.2}CCD Camera Settings for 4.2.2}
+\end{table}
+
+Now we adjust the shutter from 0.046 ms to 1s and took a video to see how the image and the mean value of the histogram changes.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcr}
+\hline
+Shutter & Mean Value\\\hline
+0.046 ms & 3.11 ADU \\
+200 ms & 3.12 ADU \\
+400 ms & 3.13 ADU \\
+600 ms & 3.15 ADU \\
+800 ms & 3.17 ADU\\
+1000 ms & 3.18 ADU\\
+\end{tabular}
+\caption{\label{table:meanvalue}Histogram Mean Value with Shutter}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \subfloat[Image Screen at Shutter of 0.046 ms]{\includegraphics[width=0.4\textwidth]{screen-1.jpg}}\label{fig:screen1}
+  \hfill
+  \subfloat[Image Screen at Shutter of 300 ms]{\includegraphics[width=0.4\textwidth]{screen-2.jpg}}\label{fig:screen2}
+  \\
+  \subfloat[Image Screen at Shutter of 600 ms]{\includegraphics[width=0.4\textwidth]{screen-3.jpg}\label{fig:screen3}}
+  \hfill
+  \subfloat[Image Screen at Shutter of 1000ms]{\includegraphics[width=0.4\textwidth]{screen-4.jpg}\label{fig:screen4}}
+  \caption{\label{fig:six plot} Figure (a) depicts the image screen of FlyCap2 at Shutter of 0.046 ms. Figure (b) depicts the image screen of FlyCap2 at Shutter of 300 ms. Figure (c) depicts the image screen of FlyCap2 at Shutter of 600 ms. Figure (d) depicts the image screen of FlyCap2 at Shutter of 1000 ms.}
+\end{figure}
+
+Now we move on to section 4.2.3 of the lab. We would first point the camera at a white wall with no shadows and ensured that the lens is out of focus. We set the lens aperture to F/1.4, set gamma to 0, and increase the gain and frame rate to max. Then, we turn on the automatic adjustments for brightness, exposure, and shutter. We position the camera so that the mean value on the histogram showed around 200. Now we would turn off automatic exposure control and adjust the F-stop to see how the histogram would change. We recorded a video to gather the data.
+Afterwards, point the camera to a non-uniform source and see what happened to the histogram.
+\begin{figure}[H]
+  \centering
+  \subfloat[Histogram of FlyCap2 at F-stop of F/1.4]{\includegraphics[width=0.45\textwidth]{f1.4.jpg}}\label{fig:f1}
+  \hfill
+  \subfloat[Histogram of FlyCap2 at F-stop of F/2]{\includegraphics[width=0.45\textwidth]{f2.jpg}}\label{fig:f2}
+  \\
+  \subfloat[Histogram of FlyCap2 at F-stop of F/2.8]{\includegraphics[width=0.5\textwidth]{f2.8.jpg}}\label{fig:f3}
+  \hfill
+  \subfloat[Histogram of FlyCap2 at F-stop of F/4]{\includegraphics[width=0.45\textwidth]{f4.jpg}\label{fig:f4}}
+  \\
+  \subfloat[Histogram of FlyCap2 at F-stop of F/8]{\includegraphics[width=0.5\textwidth]{f8.jpg}}\label{fig:f5}
+  \hfill
+  \subfloat[Histogram of FlyCap2 When Pointed at Non-Uniform Object]{\includegraphics[width=0.45\textwidth]{non_uni.jpg}\label{fig:f6}}
+  \caption{\label{fig:d plot} Figure (a) depicts the histogram of FlyCap2 at F-stop of F/1.4. Figure (b) depicts the histogram of FlyCap2 at F-stop of F/2. Figure (c) depicts the histogram of FlyCap2 at F-stop of F/2.8. Figure (d) depicts the histogram of FlyCap2 at F-stop of F/4. Figure (e) depicts the histogram of FlyCap2 at F-stop of F/8. Figure (f) depicts the histogram of FlyCap2 when pointed at a Non-Uniform object.}
+\end{figure}
+
+Moving on to section 4.2.4, we first point the camera where the histogram could capture the 0 ADU signal and 255 ADU signal at the same scene. Afterwards, we close FlyCap2 and open up the terminal. Type the following commands to acquire a set of images:
+
+1. \texttt{cd \textasciitilde/325\_326}
+
+2. python acquireImages.py
+
+3. type a folder you want the images to be stored in
+
+After the commands are run. We put the lens cap onto the CCD and repeat this again.
+
+In section 4.2.5, we need to set the Frame Rate to 30.0 fps, brightness about 3/4 of the way, gain to max, and turn off auto for all settings. We put a black film sheet on top of the CCD to block the light (see Figure). We would then adjust the shutter to 1, 5, 10, 15, 20, 25, 30 ms, and take the mean value of each. Note to let the camera settle for each exposure time.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcr}
+\hline
+Shutter & Mean Value\\\hline
+1 ms & 1.17 $\pm$ 0.05 ADU \\
+5 ms & 1.20 $\pm$ 0.05 ADU \\
+10 ms & 1.26 $\pm$ 0.05 ADU \\
+15 ms & 1.32 $\pm$ 0.05 ADU \\
+20 ms & 1.38 $\pm$ 0.05 ADU\\
+25 ms & 1.45 $\pm$ 0.05 ADU\\
+30 ms & 1.51 $\pm$ 0.05 ADU
+\end{tabular}
+\caption{\label{table:meanvaluedarkcurrent}Histogram Mean Value with Shutter for 4.2.5}
+\end{table}
+
+\section{Data Reduction}\label{sec:reduction}
+
+\subsection{Derivation of Mean, Variance, and Standard Deviation}
+
+In statistical analysis, the mean, variance, and standard deviation are critical values that describe the central tendency and spread of a dataset. The mean, $\mu$, is defined as:
+
+\begin{align}
+    \mu = \frac{1}{N} \sum_{i=1}^{N} x_i
+\end{align}
+
+where $x_i$ represents the individual data points, and $N$ is the total number of points in the dataset. The mean provides an estimate of the central value of the data.
+
+The variance, $\sigma^2$, quantifies the spread of the data and is calculated as:
+
+\begin{align}
+   \sigma^2 = \frac{1}{N} \sum_{i=1}^{N} (x_i - \mu)^2 
+\end{align}
+
+
+where $\mu$ is the mean, and $(x_i - \mu)^2$ is the squared deviation of each data point from the mean. The variance is a measure of how much the data points differ from the mean.
+
+The standard deviation, $\sigma$, is the square root of the variance:
+
+\begin{align}
+    \sigma = \sqrt{\frac{1}{N} \sum_{i=1}^{N} (x_i - \mu)^2}
+\end{align}
+
+The standard deviation is particularly important as it gives the spread of the data in the same units as the data itself, making it easier to interpret.
+
+\subsection{Poisson Distribution Function}
+
+Photon counting in astronomical observations often follows a Poisson distribution. The Poisson distribution models the probability of a given number of events (such as photon counts) occurring within a fixed interval. The Poisson probability distribution function is given by:
+
+\begin{align}
+    P(x; \mu) = \frac{\mu^x e^{-\mu}}{x!}
+\end{align}
+
+where $\mu$ is the mean number of events, $x$ is the number of observed events, and $P(x; \mu)$ is the probability of observing exactly $x$ events. The defining property of the Poisson distribution is that the mean and the variance are equal, i.e., $\mu = \sigma^2$.
+
+This function is important for the analysis of photon count rates, as the photon detection process follows a Poisson distribution for small mean values. The Poisson distribution would have a sharp peak appear on lower values when mean is small. As the mean increases, the Poisson distribution approaches a Gaussian distribution, following the Central Limit Theorem discussed in Lecture 2. 
+
+\subsection{Data Extraction from Images}
+
+To analyze the images obtained during section 4.2.4, a Python script was written to extract the pixel data from the images. The images would be read from using the glob package function glob to get the 
+
+The following Python code was used to load and process the images' file path. Then, the find\_mean function would initialize an empty array. Then it loops over the images and turn them into arrays. Each array's information is added to the empty array, and the sum would be divided by the number of images to get the mean of each pixel. We use this function on the dark images to find the mean of the dark images.
+
+Afterwards, the subs\_mean function would take in the mean of the dark images and the light images. The function find the ADU of each pixel in the light images and minus the mean of the dark images we got before. This is to remove the dark current so that we have a better understanding of the read noise. Afterwards, the 25 images' arrays after subtracting the mean of the dark images are used to find the mean and variance for plotting.
+
+\subsection{Linear Regression Fit using Least Squares Method}
+
+The least squares method is a standard approach for fitting a model to data. In this experiment, we apply the least squares method to fit a linear regression model to the relationship between the mean and variance of the photon count data and the relationship between shutter and mean value of the photon rates. The linear model is expressed as:
+
+\[
+y = mx + c
+\]
+
+where $y$ is the dependent variable (variance), $x$ is the independent variable (mean), $m$ is the slope, and $c$ is the intercept.
+
+To minimize the total square deviation, or the differences between the observed data points and the fitted model, we use the least squares fitting method. The goal is to find the values of $m$ and $c$ that minimize the sum of squared residuals:
+
+\[
+\text{Total Square Deviation} = \chi^2 = \sum_{i=1}^{N} (y_i - mx_i - c)^2
+\]
+
+Since we want to minimize $\chi^2$, we need to solve:
+\[
+\frac{\partial}{\partial m} \chi^2 = 0, \quad \frac{\partial}{\partial c} \chi^2 = 0
+\]
+Following the lab manual, evaluating the derivatives gives:
+\[
+\frac{\partial}{\partial m} \chi^2 = \frac{\partial}{\partial m} \sum_{i} \left( y_i - (mx_i + c) \right)^2 = 2m \sum_{i} x_i^2 + 2c \sum_{i} x_i - 2 \sum_{i} x_i y_i = 0
+\]
+\[
+\frac{\partial}{\partial c} \chi^2 = \frac{\partial}{\partial c} \sum_{i} \left( y_i - (mx_i + c) \right)^2 = 2m \sum_{i} x_i + 2c N - 2 \sum_{i} y_i = 0
+\]
+This set of equations can be expressed compactly in matrix form as:
+\[
+\begin{bmatrix}
+\sum_{i} x_i^2 & \sum_{i} x_i \\
+\sum_{i} x_i & N
+\end{bmatrix}
+\begin{bmatrix}
+m \\
+c
+\end{bmatrix}
+=
+\begin{bmatrix}
+\sum_{i} x_i y_i \\
+\sum_{i} y_i
+\end{bmatrix}
+\]
+This system of linear equations can then be solved by multiplying both sides by the inverse of the matrix on the left-hand side.
+
+\[
+\begin{bmatrix}
+m \\
+c
+\end{bmatrix}
+=
+\begin{bmatrix}
+\sum_{i} x_i^2 & \sum_{i} x_i \\
+\sum_{i} x_i & N
+\end{bmatrix}^{-1}
+\begin{bmatrix}
+\sum_{i} x_i y_i \\
+\sum_{i} y_i
+\end{bmatrix}
+\]
+
+In section 4.2.4 and 4.2.5, a python script was written to calculate the linear regression. In the function, the mean and variance values are calculated from the photon count data and fits a linear model to describe their relationship. By minimizing the squared differences between the model and the data, the slope and intercept of the best-fit line are determined. This linear fit helps us identify the read noise of the sensor, which can be inferred from the intercept of the fitted line. The script utilizes the np.linalg function to perform the matrix calculation.
+
+\section{Data Analysis}\label{sec:analysis}
+
+\subsection{Statistics}
+
+In this section, we are given a histogram graph and its Poisson distribution fit. We are told to reproduce it with given data points. The graph will show a histogram of photon count rates and a dashed line showing the Poisson distribution with a mean ($\mu$) of 12.
+
+To start, I wrote out functions to calculate the mean and the standard deviation as it is needed to plot out the Poisson and Gaussian distribution.
+
+Then, I created a python script that generates the data points given in the lab manual. Using this data, I plotted a histogram for the photon count rates. The bins for the histogram were selected based on the range of photon counts. Then, I plot out the Poisson distribution using the scipy.stats.poisson function. 
+
+\begin{figure}[H]
+  \centering
+  \subfloat[Histogram and Poisson Distribution Fit with a mean of 12]{\includegraphics[width=0.5\textwidth]{set.png}\label{fig:set}}
+\end{figure}
+
+After reproducing the histogram with the given data, I proceed to analyze photon count rates from the ``Large.txt" and ``Small.txt". I read the data in each file and calculated the mean and standard deviation for each using the functions I wrote out before:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcr}
+\hline
+File Type & Mean & Standard Deviation\\\hline
+``Large.txt"& 1072.528 & 32.815\\
+``Small.txt" & 3.392 & 1.858\\
+\end{tabular}
+\caption{\label{table MeanAndStandardDeviationofFiles}Mean and Standard Deviation of Photon Count Rates}
+\end{table}
+
+Afterwards, I plot out the data first in sequence and then in a histogram:
+
+\begin{figure}[H]
+  \centering
+  \subfloat[Photon Count Rates in Sequence for Small.txt]{\includegraphics[width=0.5\textwidth]{sequence-small.png}\label{fig:1}}
+  \hfill
+  \subfloat[Photon Count Rates in Sequence for Large.txt]{\includegraphics[width=0.5\textwidth]{sequence-big.png}\label{fig:2}}
+  \caption{\label{fig:double plot} Figure (a) depicts the ``Small.txt" data in sequence. Figure (b) depicts the ``Large.txt" data in sequence. }
+\end{figure}
+
+In Figure~\ref{fig:1}, the data points appear evenly scattered between 2 to 6 photon count rates. Most of the counts are concentrated in this lower range, reflecting a generally low photon count. In Figure~\ref{fig:2}, the data points are more clustered between 1050-1100. This suggests that the large data set has a much higher and more concentrated photon count rate compared to the small data set.
+
+\begin{figure}[H]
+  \centering
+  \subfloat[Histogram with Poission fit and Gaussian fit for Small.txt]{\includegraphics[width=0.5\textwidth]{hist-small.png}\label{fig:3}}
+  \hfill
+  \subfloat[Histogram with Poission fit and Gaussian fit for Large.txt]{\includegraphics[width=0.5\textwidth]{hist-big.png}\label{fig:4}}
+  \caption{\label{fig:double plot2} Figure (a) depicts the ``Small.txt" data in a histogram with a Possion and Gaussian fit. Figure (b) depicts the ``Large.txt" data in a histogram with a Possion and Gaussian fit. }
+\end{figure}
+
+As seen above, in Figure 4 (b), we can see that the large.txt dataset has a high photon count rate as the mean is around 1072.53. Also the histogram takes on a more symmetric, bell-shaped distribution that aligns with the Gaussian distribution. The Poisson distribution also fits the data well, making the curve very similar to the Gaussian distribution. With such a large mean, the histogram and the curve is lower and more spread out with the data distributed densly around the mean. This matches with the Central Limit Theorem as the mean of a Poisson distribution becomes large, it approximates a Gaussian distribution. 
+
+In contrast, in Figure 4 (a), the small.txt dataset has a much lower mean around 3.39. The histogram peaks higher compared to the large.txt graph and the peak is towards the lower values in the dataset. We can see that the Poisson distribution fits the histogram better than the Gaussian distribution. The Poisson distribution has a higher peak and just fits the data better. 
+
+\subsection{Saturation}
+
+From Table~\ref{table:CCDSettings}, we can see that the maximum data value returned by the camera is 255 ADU. This makes sense as we are only using 8 bits for the CCD. $2^8 = 256$ and we need a spot for 0 ADU, so the highest data value is 255 ADU for any 8-bit camera.
+
+\subsection{In the dark!}
+
+From Table~\ref{table:CCDSettings4.2.2}, we can see that as the shutter increases, the mean value increases as well. This makes sense as increasing the shutter means increasing the duration of which the sensor collects photons as defined in the Lab Manual. The longer the shutter is, the more time the CCD can collect photons, so the mean photon rate would increase. 
+
+Referring to Figure~\ref{fig:six plot}, at low exposure time, we found that the image is completely dark and uniform. As we increase the exposure time, we can see that bright pixels would start showing up on the image. These pixels are static By when we reached the max exposure time, we can clearly see different brightness of light pixels on the image. 
+
+\subsection{Histograms}
+
+Looking at Figure~\ref{fig:d plot}, we can see that the histograms showcase the Poisson distribution very well. With the distribution very close to a normal distribution at large F-stops like F/1.4 and F/2, as the mean value is higher. This further solidifies the Central Limit Theorem mentioned in Section~\ref{sec:reduction}. This also means that the standard deviation is large as the distribution is more evenly distributed. As we lower the F-stop, the mean value becomes smaller, the distribution becomes narrower and gets higher peak, making the standard deviation decrease as well. This also matches with our analysis in Section 4.1. 
+
+ After pointing the camera to a non-uniform source, we can see the Histogram becomes not a tight, centralized, and smooth distribution anymore. As shown in Figure~\ref{fig:f6}, the histogram becomes more spreadout across a big range between 96 and 255. The non-uniform light source means that different parts of the image will have varying brightness levels, causing this wide range of distribution. We can also see that the graph is no longer smooth and have many different peaks. The histogram no longer follow the Possion distribution and becomes a more broader and irregular distribution.
+
+\subsection{Measuring read noise}
+
+After reading the image data and plotting, we get the following graph:
+
+\begin{figure}[H]
+\epsscale{.8} 
+\plotone{varvsmean.png}
+\caption{\label{Varvsmean} Figure displays the Variance VS Mean Graph of 1000 Random Pixel Points from the Light and Dark Images with Linear Regression Fit}
+\end{figure}
+
+In the above graph, we can see that the data points are really dense around 50 ADU, but becomes saturated as the mean gets bigger. To account for this, I only used data points where the mean value is between 0 and 150 in order to get an accurate linear regression fit. The scatter plot reveals a positive linear relationship between the mean pixel values and their variance. We can see that when the mean value is 0, the variance is not 0. This is due to read noise in the CCD. Even when no photons are hitting the detector, the camera is generating some noise and the sensor still reads out the pixel values. As mentioned before, at high signal levels, the scatter becomes saturated. The photon sensors are reaching their full capacity, making it deviate from the linear relationship. However, this plot still resembles the Poisson distribution where the mean and variance are suppose to be proportional.
+
+The slope of the graph is around 0.06 ADU$^2$ / ADU. This slope is directly related to the gain of the camera sensors. Since gains relates ADU to electrons generated, we can use the slope to estimate the gain of the camera.
+
+We can see that the noise is just the y intercept of the linear regression fit, which is 0.41 ADU$^2$. Taking the square root gives us the read noise:
+
+\begin{align*}
+    \text{Read noise} = \sqrt{0.41}ADU^2 \approx 0.64 \text{ ADU}
+\end{align*}
+
+Since the gain is directly related to the slope of the graph, we can just calculate the gain through:
+
+\begin{align*}
+    \text{Gain(e$^-$/ADU)} = \frac{1}{slope} = \frac{1}{0.06} \approx 16.67 e^- / ADU
+\end{align*}
+
+The gain value tells us how many electrons are generated per ADU of the camera's signal. It is quite an important feature for a CCD as it determines how the sensor output relates to the number of electrons collected by the sensors. 
+
+\subsection{Dark Current}
+
+Plotting out the mean value vs. exposure graph with the linear least-square fit, we get:
+
+\begin{figure}[H]
+\epsscale{.8} 
+\plotone{darkgraph.png}
+\caption{\label{darkgraph} Figure displays the Mean Value vs. Exposure Graph with Linear Regression Fit and Uncertainties}
+\end{figure}
+
+In the graph above, we can see that the mean value and exposure have a linear relationship, the linear regression fit is fitted pretty accurately. From the graph, we know that the slope of the graph would just be the dark current in [ADU/sec/pixel]. We have:
+
+\begin{align*}
+    \text{Dark Current} \approx 0.012 \text{ADU/sec/pixel}
+\end{align*}
+
+To find the dark current in [e$^-$/sec/pixel], we simply multiply the previous value by the gain we found earlier:
+
+\begin{align*}
+    \text{Dark Current[e$^-$/sec/pixel]} = 0.012 \times 16.67 \pm 0.05 \approx 0.200 \pm 0.001\text{[e$^-$/sec/pixel]}
+\end{align*}
+
+\section{Discussion \& Conclusion}\label{sec:conclusion}
+
+In this lab, we conducted a series of experiments to explore the noise characteristics of a CCD sensor, including its dark current, read noise, and statistical behavior under different exposure conditions. By analyzing the relationship between exposure time and mean values, we were able to determine the dark current of the detector and fit a linear model to assess the read noise. Additionally, we examined how well our measurements adhered to the expected statistical distributions, such as the Poisson and Gaussian models.
+
+Our analysis of the read noise yielded a value of approximately 0.64 ADU, which is within the expected range for a CCD sensor of this type. This value signifies that even without incident light, the camera generates a small amount of noise, which can impact low-light imaging. The gain of the CCD was calculated to be approximately 16.67 e\textsuperscript{-}/ADU, which translates the analog output of the sensor into measurable electrons. This is crucial for converting the digital output to a physically meaningful unit, allowing astronomers to properly quantify the number of photons detected by each pixel.
+
+The dark current was determined to be 0.012 ADU/sec/pixel, or approximately 0.2 e\textsuperscript{-}/sec/pixel after accounting for the gain. This value aligns with expectations for cooled CCD sensors, though it still contributes to noise during long exposure times. Minimizing the dark current is essential in low-light or long-exposure astronomical imaging, as it can introduce significant errors if not properly corrected.
+
+\subsection{Future Improvements}
+
+While the results of this experiment are largely consistent with expected values, there are areas where improvements could be made in future iterations. For example, increasing the number of image captures at each exposure time would provide more data points and reduce statistical fluctuations in the dark current measurement. Additionally, more precise temperature control could be used to reduce thermal noise, especially for extended exposures.
+
+Further experiments could explore other aspects of CCD performance, such as quantifying non-linearity at higher exposure levels or investigating the effects of cosmic rays on long exposures. Implementing more advanced noise reduction algorithms, such as median stacking of images, could further refine the accuracy of the read noise and dark current measurements. Finally, applying the techniques used in this lab to other types of detectors, such as CMOS sensors, could provide insights into the relative advantages and disadvantages of each technology in astronomical applications.
+
+\subsection{Conclusion}
+
+In conclusion, we successfully characterized the noise properties of the CCD detector, quantifying both its read noise and dark current. These measurements are essential for ensuring the accuracy of astronomical observations, and the techniques applied here can be used to improve the performance of CCD-based systems in a variety of scientific contexts.
+
+
+
+\section{Bibliography}
+
+\bibliography{example}
+
+\section*{Appendix} \label{Appendix}
+
+\subsection{Data Collection}\label{code:collect}
+
+The following code was written by Jinhao Zhang to calculate the mean and standard deviation of arrays. The code defines two functions
+
+\begin{minted}{python}
+"""
+IMPORTS
+"""
+
+import numpy as np
+import PIL
+from PIL import Image
+import matplotlib.pyplot as plt
+import glob
+
+
+"""
+FUNCTIONS
+"""
+
+# function for finding mean
+def find_mean(lst):
+    sum_together = 0
+    for i in lst:
+        sum_together += i
+    return sum_together / len(lst)
+
+# function to find standard deviation
+def find_standard_deviation(lst):
+    mean_data = find_mean(lst)
+    variance = sum((x - mean_data) ** 2 for x in lst) / len(lst)
+    return np.sqrt(variance)
+    
+\end{minted}
+
+\end{document}
